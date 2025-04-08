@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YOLO Object Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .upload-form {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            background-color: #fafafa;
+        }
+        .result-image {
+            max-width: 100%;
+            margin-top: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .detection-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+        .detection-item {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .detection-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .confidence-bar {
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+        .confidence-level {
+            height: 100%;
+            background-color: #4CAF50;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>YOLO Object Detection</h1>
+        <p>Upload an image to detect objects and draw circles around them.</p>
+        
+        <div class="upload-form">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" name="image" accept="image/*" required>
+                <button type="submit">Detect Objects</button>
+            </form>
+        </div>
+        
+        <div id="loading" class="loading">
+            Processing image... Please wait...
+        </div>
+        
+        <div id="result">
+            <img id="resultImage" class="result-image" style="display: none;">
+            <div id="detectionInfo" class="detection-info" style="display: none;">
+                <h3>Detection Results</h3>
+                <div id="detectionList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const loading = document.getElementById('loading');
+            const resultImage = document.getElementById('resultImage');
+            const detectionInfo = document.getElementById('detectionInfo');
+            const detectionList = document.getElementById('detectionList');
+            
+            loading.style.display = 'block';
+            resultImage.style.display = 'none';
+            detectionInfo.style.display = 'none';
+            
+            try {
+                const response = await fetch('/detect', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Display the processed image
+                    resultImage.src = data.image_url;
+                    resultImage.style.display = 'block';
+                    
+                    // Display detection information
+                    if (data.detections && data.detections.length > 0) {
+                        detectionList.innerHTML = '';
+                        
+                        data.detections.forEach(detection => {
+                            const confidencePercent = (detection.confidence * 100).toFixed(2);
+                            
+                            const detectionItem = document.createElement('div');
+                            detectionItem.className = 'detection-item';
+                            detectionItem.innerHTML = `
+                                <strong>${detection.class}</strong> (${confidencePercent}% confidence)
+                                <div class="confidence-bar">
+                                    <div class="confidence-level" style="width: ${confidencePercent}%"></div>
+                                </div>
+                            `;
+                            
+                            detectionList.appendChild(detectionItem);
+                        });
+                        
+                        detectionInfo.style.display = 'block';
+                    }
+                } else {
+                    alert(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                alert('An error occurred while processing the image');
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html> 
