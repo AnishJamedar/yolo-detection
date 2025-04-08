@@ -3,8 +3,8 @@ import os
 from werkzeug.utils import secure_filename
 import cv2
 import numpy as np
-from ultralytics import YOLO
 from init_app import init_app
+from model_loader import load_yolo_model
 
 # Initialize the application
 init_app()
@@ -17,7 +17,9 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize YOLO model
-model = YOLO('yolov8n.pt')
+print("Loading YOLO model...")
+model = load_yolo_model('yolov8n.pt')
+print("YOLO model loaded successfully!")
 
 def process_image(image_path):
     # Read the image
